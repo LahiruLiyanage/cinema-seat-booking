@@ -41,11 +41,13 @@ export async function DELETE(
     // Release seats in session
     const session = await Session.findById(booking.sessionId);
     if (session) {
-      const updatedSeatMap = releaseSeatsFromSeatMap(session.seatMap as any, booking.seats);
-      await Session.findByIdAndUpdate(booking.sessionId, {
-        seatMap: updatedSeatMap,
-        bookedSeats: Math.max(0, session.bookedSeats - booking.seats.length),
-      });
+      const plainSeatMap = session.seatMap.map((s: any) =>
+        typeof s.toObject === 'function' ? s.toObject() : { ...s }
+      );
+      const updatedSeatMap = releaseSeatsFromSeatMap(plainSeatMap, booking.seats);
+      session.seatMap = updatedSeatMap as any;
+      session.bookedSeats = Math.max(0, session.bookedSeats - booking.seats.length);
+      await session.save();
     }
 
     // Update booking status

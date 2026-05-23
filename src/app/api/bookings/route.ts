@@ -96,16 +96,19 @@ export async function POST(request: NextRequest) {
     });
 
     // Update session seat map
+    // IMPORTANT: Convert Mongoose subdocuments to plain objects first
+    const plainSeatMap = session.seatMap.map((s: any) =>
+      typeof s.toObject === 'function' ? s.toObject() : { ...s }
+    );
     const updatedSeatMap = applyBookingToSeatMap(
-      session.seatMap as any,
+      plainSeatMap,
       seatsToBook,
       booking._id.toString()
     );
 
-    await Session.findByIdAndUpdate(sessionId, {
-      seatMap: updatedSeatMap,
-      bookedSeats: session.bookedSeats + seatsToBook.length,
-    });
+    session.seatMap = updatedSeatMap as any;
+    session.bookedSeats = session.bookedSeats + seatsToBook.length;
+    await session.save();
 
     return NextResponse.json({
       success: true,
