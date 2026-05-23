@@ -48,8 +48,8 @@ export async function POST(request: NextRequest) {
 
     let seatsToBook: string[];
 
-    if (isAdminOverride && selectedSeats && selectedSeats.length > 0) {
-      // Admin override: use manually selected seats
+    if (selectedSeats && selectedSeats.length > 0) {
+      // Use the specific seats selected by user (from algorithm suggestion or admin override)
       const unavailable = selectedSeats.filter((seatId: string) => {
         const seat = session.seatMap.find((s: any) => s.id === seatId);
         return !seat || seat.status !== 'available';

@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import SeatMap from '@/components/SeatMap';
 
-interface StressTestResult {
+interface TestResult {
   fillPercentage: number;
   totalUsableSeats: number;
   totalBooked: number;
@@ -18,185 +17,165 @@ interface StressTestResult {
   finalSeatMap: any[];
 }
 
+const ROW_ORDER = ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O'];
+const ALL_COLS = Array.from({ length: 28 }, (_, i) => i + 1);
+
 export default function StressTestPage() {
   const router = useRouter();
-  const [fillPercentage, setFillPercentage] = useState(70);
-  const [isRunning, setIsRunning] = useState(false);
-  const [result, setResult] = useState<StressTestResult | null>(null);
+  const [fillPct, setFillPct] = useState(70);
+  const [running, setRunning] = useState(false);
+  const [result, setResult] = useState<TestResult | null>(null);
 
-  const runStressTest = async () => {
-    setIsRunning(true);
+  async function runTest() {
+    setRunning(true);
     setResult(null);
     try {
       const res = await fetch('/api/stress-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fillPercentage }),
+        body: JSON.stringify({ fillPercentage: fillPct }),
       });
       const data = await res.json();
-      if (data.success) {
-        setResult(data.data);
-      }
-    } catch (err) {
-      console.error('Stress test failed:', err);
+      if (data.success) setResult(data.data);
+    } catch (e) {
+      console.error('Stress test failed:', e);
     }
-    setIsRunning(false);
-  };
+    setRunning(false);
+  }
 
-  // Group size distribution for the chart
-  const groupSizeDistribution = result
-    ? [1, 2, 3, 4, 5, 6, 7].map((size) => ({
+  // Group size counts
+  const groupCounts = result
+    ? [1,2,3,4,5,6,7].map(size => ({
         size,
-        count: result.bookingLog.filter((b) => b.groupSize === size).length,
+        count: result.bookingLog.filter(b => b.groupSize === size).length,
       }))
     : [];
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
-      {/* Header */}
-      <header className="border-b border-gray-800 bg-gray-900/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <button
-            onClick={() => router.push('/')}
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            ← Back to Movies
-          </button>
-          <h1 className="text-lg font-bold">
-            📊 Algorithm Stress Test
-          </h1>
+      <header className="bg-gray-900 border-b border-gray-800">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={() => router.push('/')} className="text-gray-400 hover:text-white text-sm">← Back</button>
+          <h1 className="text-lg font-bold">📊 Algorithm Stress Test</h1>
           <div />
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-6">
         {/* Controls */}
-        <div className="bg-gray-900/60 rounded-2xl border border-gray-800 p-6 mb-8">
-          <h2 className="text-xl font-bold mb-4">Test Configuration</h2>
-          <div className="flex flex-wrap items-end gap-6">
+        <div className="bg-gray-900 rounded-xl p-5 border border-gray-800 mb-6">
+          <div className="flex flex-wrap items-end gap-4">
             <div>
-              <label className="text-sm text-gray-400 block mb-2">
-                Fill Percentage: <span className="text-blue-400 font-bold">{fillPercentage}%</span>
+              <label className="text-sm text-gray-400">
+                Fill: <span className="text-blue-400 font-bold">{fillPct}%</span>
               </label>
-              <input
-                type="range"
-                min="10"
-                max="95"
-                step="5"
-                value={fillPercentage}
-                onChange={(e) => setFillPercentage(Number(e.target.value))}
-                className="w-64 accent-blue-500"
+              <input type="range" min="10" max="95" step="5" value={fillPct}
+                onChange={e => setFillPct(Number(e.target.value))}
+                className="w-60 block accent-blue-500"
               />
-              <div className="flex justify-between text-xs text-gray-600 mt-1 w-64">
-                <span>10%</span>
-                <span>50%</span>
-                <span>95%</span>
-              </div>
             </div>
-
-            <button
-              onClick={runStressTest}
-              disabled={isRunning}
-              className="px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold rounded-lg hover:from-blue-500 hover:to-purple-500 transition-all disabled:opacity-50 shadow-lg"
+            <button onClick={runTest} disabled={running}
+              className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg disabled:opacity-50"
             >
-              {isRunning ? '⏳ Running Simulation...' : '🚀 Run Stress Test'}
+              {running ? '⏳ Running...' : '🚀 Run Test'}
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-3">
-            Simulates filling the cinema to {fillPercentage}% capacity using realistic group size distribution (1-7 people). Measures scattered single seats and algorithm efficiency.
+          <p className="text-xs text-gray-500 mt-2">
+            Simulates random bookings (group sizes 1–7) until {fillPct}% full. Measures scattered single seats.
           </p>
         </div>
 
-        {/* Results */}
         {result && (
           <>
-            {/* Metrics Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-              <div className="bg-gray-900/60 rounded-xl p-4 border border-gray-800 text-center">
-                <div className="text-3xl font-black text-blue-400">{result.occupancyRate}%</div>
-                <div className="text-xs text-gray-500 uppercase mt-1">Actual Occupancy</div>
-              </div>
-              <div className="bg-gray-900/60 rounded-xl p-4 border border-gray-800 text-center">
-                <div className="text-3xl font-black text-emerald-400">{result.algorithmEfficiency}%</div>
-                <div className="text-xs text-gray-500 uppercase mt-1">Algorithm Efficiency</div>
-              </div>
-              <div className="bg-gray-900/60 rounded-xl p-4 border border-gray-800 text-center">
-                <div className="text-3xl font-black text-red-400">{result.finalScatteredSingles}</div>
-                <div className="text-xs text-gray-500 uppercase mt-1">Scattered Singles</div>
-              </div>
-              <div className="bg-gray-900/60 rounded-xl p-4 border border-gray-800 text-center">
-                <div className="text-3xl font-black text-purple-400">{result.totalBookings}</div>
-                <div className="text-xs text-gray-500 uppercase mt-1">Total Bookings</div>
-              </div>
+            {/* Metrics */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+              {[
+                [result.occupancyRate + '%', 'Occupancy', 'text-blue-400'],
+                [result.algorithmEfficiency + '%', 'Efficiency', 'text-emerald-400'],
+                [String(result.finalScatteredSingles), 'Scattered', 'text-red-400'],
+                [String(result.totalBookings), 'Bookings', 'text-purple-400'],
+              ].map(([val, label, color]) => (
+                <div key={label} className="bg-gray-900 rounded-lg p-4 border border-gray-800 text-center">
+                  <p className={`text-2xl font-bold ${color}`}>{val}</p>
+                  <p className="text-[10px] text-gray-500 uppercase">{label}</p>
+                </div>
+              ))}
             </div>
 
-            {/* Detailed Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-gray-900/60 rounded-xl p-5 border border-gray-800">
-                <h3 className="text-sm font-bold text-gray-400 uppercase mb-3">Booking Summary</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Total Usable Seats:</span>
-                    <span className="text-white font-mono">{result.totalUsableSeats}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Seats Booked:</span>
-                    <span className="text-blue-400 font-mono">{result.totalBooked}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Seats Remaining:</span>
-                    <span className="text-emerald-400 font-mono">{result.totalAvailable}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Scattered Before:</span>
-                    <span className="text-gray-500 font-mono">{result.initialScatteredSingles}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-400">Scattered After:</span>
-                    <span className="text-red-400 font-mono">{result.finalScatteredSingles}</span>
-                  </div>
+            {/* Stats + Distribution */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+              <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
+                <h3 className="text-xs font-bold text-gray-400 uppercase mb-2">Summary</h3>
+                <div className="space-y-1 text-sm">
+                  {[
+                    ['Usable Seats', result.totalUsableSeats],
+                    ['Booked', result.totalBooked],
+                    ['Remaining', result.totalAvailable],
+                    ['Scattered Before', result.initialScatteredSingles],
+                    ['Scattered After', result.finalScatteredSingles],
+                  ].map(([label, val]) => (
+                    <div key={String(label)} className="flex justify-between">
+                      <span className="text-gray-400">{label}:</span>
+                      <span className="font-mono">{val}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-
-              <div className="bg-gray-900/60 rounded-xl p-5 border border-gray-800">
-                <h3 className="text-sm font-bold text-gray-400 uppercase mb-3">Group Size Distribution</h3>
-                <div className="space-y-2">
-                  {groupSizeDistribution.map(({ size, count }) => {
-                    const maxCount = Math.max(...groupSizeDistribution.map((g) => g.count));
-                    const width = maxCount > 0 ? (count / maxCount) * 100 : 0;
-                    return (
-                      <div key={size} className="flex items-center gap-3">
-                        <span className="text-xs text-gray-400 w-12">Size {size}</span>
-                        <div className="flex-1 bg-gray-800 rounded-full h-4 overflow-hidden">
-                          <div
-                            className="h-4 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full transition-all duration-500 flex items-center justify-end pr-1"
-                            style={{ width: `${width}%` }}
-                          >
-                            {count > 0 && (
-                              <span className="text-[10px] text-white font-bold">{count}</span>
-                            )}
-                          </div>
-                        </div>
+              <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
+                <h3 className="text-xs font-bold text-gray-400 uppercase mb-2">Group Distribution</h3>
+                {groupCounts.map(({ size, count }) => {
+                  const max = Math.max(...groupCounts.map(g => g.count), 1);
+                  return (
+                    <div key={size} className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-gray-400 w-10">Size {size}</span>
+                      <div className="flex-1 bg-gray-800 rounded h-3 overflow-hidden">
+                        <div className="h-3 bg-blue-600 rounded" style={{ width: `${(count / max) * 100}%` }} />
                       </div>
-                    );
-                  })}
-                </div>
+                      <span className="text-xs text-gray-500 w-6 text-right">{count}</span>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Final Seat Map Visualization */}
-            <div className="bg-gray-900/40 rounded-2xl border border-gray-800 p-4">
-              <h3 className="text-lg font-bold mb-4 text-center">
-                Final Seat Map After Stress Test
-              </h3>
-              <SeatMap
-                seatMap={result.finalSeatMap}
-                selectedSeats={[]}
-                suggestedSeats={[]}
-                onSeatClick={() => {}}
-                isAdminOverride={false}
-                disabled={true}
-              />
+            {/* Final Seat Map */}
+            <div className="bg-gray-900/50 rounded-xl border border-gray-800 p-3 overflow-x-auto">
+              <h3 className="text-sm font-bold text-center mb-3">Final Seat Map</h3>
+              <div className="min-w-[680px]">
+                {ROW_ORDER.map(row => {
+                  const lookup = new Map(result.finalSeatMap.filter((s: any) => s.row === row).map((s: any) => [s.id, s]));
+                  return (
+                    <div key={row} className="flex items-center justify-center gap-[1px] mb-[2px]">
+                      <span className="w-6 text-right text-xs font-bold text-gray-400 mr-1">{row}</span>
+                      {ALL_COLS.map(col => {
+                        const seat = lookup.get(`${row}-${col}`) as any;
+                        const isLeftAisle = col === 5;
+                        const isRightAisle = col === 25;
+                        if (!seat) {
+                          return (
+                            <span key={col}>
+                              {isLeftAisle && <span className="inline-block w-3" />}
+                              <span className="inline-block w-6 h-6" />
+                              {isRightAisle && <span className="inline-block w-3" />}
+                            </span>
+                          );
+                        }
+                        const color = seat.status === 'booked' ? 'bg-gray-600' :
+                          seat.status === 'broken' ? 'bg-red-700' :
+                          seat.type === 'vip' ? 'bg-purple-600' :
+                          seat.type === 'disability' ? 'bg-cyan-600' : 'bg-blue-600';
+                        return (
+                          <span key={col}>
+                            {isLeftAisle && <span className="inline-block w-3" />}
+                            <span className={`inline-block w-6 h-6 rounded-t-md ${color} opacity-80`} />
+                            {isRightAisle && <span className="inline-block w-3" />}
+                          </span>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </>
         )}
