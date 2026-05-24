@@ -437,9 +437,9 @@ function trySplitGroup(
   // Try splitting into 2 groups
   for (let splitSize = Math.ceil(groupSize / 2); splitSize < groupSize; splitSize++) {
     const remainder = groupSize - splitSize;
-    if (remainder < 2 && remainder !== 0) continue; // No solo sub-groups
+    if (remainder < 2 && remainder !== 0) continue; // No solo subgroups
 
-    const first = findOptimalSeats(seatMap, splitSize, preference as any);
+    const first = findOptimalSeats(seatMap, splitSize, preference as never);
     if (!first) continue;
 
     // Temporarily mark first group's seats as booked to find second placement
@@ -448,7 +448,7 @@ function trySplitGroup(
       status: first.seats.includes(s.id) ? ('booked' as const) : s.status,
     }));
 
-    const second = findOptimalSeats(tempMap, remainder, preference as any);
+    const second = findOptimalSeats(tempMap, remainder, preference as never);
     if (!second) continue;
 
     return {
