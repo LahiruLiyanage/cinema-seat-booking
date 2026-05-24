@@ -154,7 +154,7 @@ export default function BookingPage() {
       const data = await res.json();
 
       if (data.success) {
-        showNotification('success', `✅ Booked! Seats: ${data.data.seats.join(', ')} — Total: £${data.data.totalPrice}`);
+        showNotification('success', `✅ Booked! Seats: ${data.data.seats.join(', ')} — Total: LKR ${data.data.totalPrice.toLocaleString()}`);
         setSelectedSeats([]);
         setSuggestedSeats([]);
         setSuggestion(null);
@@ -274,9 +274,9 @@ export default function BookingPage() {
               {/* Legend */}
               <div className="mt-4 flex flex-wrap justify-center gap-3 text-[10px]">
                 {[
-                  ['bg-blue-600', 'Regular £10'],
-                  ['bg-purple-600', 'VIP £18'],
-                  ['bg-cyan-600', 'Disability £8'],
+                  ['bg-blue-600', 'Regular LKR 1,500'],
+                  ['bg-purple-600', 'VIP LKR 2,500'],
+                  ['bg-cyan-600', 'Disability LKR 1,000'],
                   ['bg-red-700', 'Broken'],
                   ['bg-gray-600', 'Booked'],
                   ['bg-green-500', 'Selected'],

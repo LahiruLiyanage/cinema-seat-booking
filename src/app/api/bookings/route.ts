@@ -77,11 +77,11 @@ export async function POST(request: NextRequest) {
     }
 
     // Calculate price
-    const pricePerSeat: Record<string, number> = { regular: 10, vip: 18, disability: 8, broken: 0 };
+    const pricePerSeat: Record<string, number> = { regular: 1500, vip: 2500, disability: 1000, broken: 0 };
     let totalPrice = 0;
     for (const seatId of seatsToBook) {
       const seat = session.seatMap.find((s: any) => s.id === seatId);
-      if (seat) totalPrice += pricePerSeat[seat.type] || 10;
+      if (seat) totalPrice += pricePerSeat[seat.type] || 1500;
     }
 
     // Create booking

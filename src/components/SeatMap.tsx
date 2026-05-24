@@ -104,9 +104,9 @@ export default function SeatMap({
             <div className="capitalize">
               {seat.type} • {seat.status}
             </div>
-            {seat.type === 'vip' && <div className="text-purple-300">£18</div>}
-            {seat.type === 'regular' && <div className="text-blue-300">£10</div>}
-            {seat.type === 'disability' && <div className="text-cyan-300">£8</div>}
+            {seat.type === 'vip' && <div className="text-purple-300">LKR 2,500</div>}
+            {seat.type === 'regular' && <div className="text-blue-300">LKR 1,500</div>}
+            {seat.type === 'disability' && <div className="text-cyan-300">LKR 1,000</div>}
           </div>
         )}
       </div>
@@ -203,15 +203,15 @@ export default function SeatMap({
         <div className="mt-6 flex flex-wrap justify-center gap-4 text-xs">
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 rounded-t-md bg-blue-600" />
-            <span className="text-gray-300">Regular (£10)</span>
+            <span className="text-gray-300">Regular (LKR 1,500)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 rounded-t-md bg-purple-600" />
-            <span className="text-gray-300">VIP (£18)</span>
+            <span className="text-gray-300">VIP (LKR 2,500)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 rounded-t-md bg-cyan-500" />
-            <span className="text-gray-300">Disability (£8)</span>
+            <span className="text-gray-300">Disability (LKR 1,000)</span>
           </div>
           <div className="flex items-center gap-1.5">
             <div className="w-4 h-4 rounded-t-md bg-red-600" />
